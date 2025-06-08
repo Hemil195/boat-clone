@@ -32,7 +32,7 @@ const Signup = () => {
     setError('');
     
     try {
-      const response = await axios.post('https://boat-clone-kv0v.onrender.com/api/auth/signup', formData);
+      const response = await axios.post('https://boat-clone-ttob.onrender.com/api/auth/signup', formData);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       
