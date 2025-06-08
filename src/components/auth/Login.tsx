@@ -33,7 +33,8 @@ const Login = () => {
     setError('');
     
     try {
-      const response = await axios.post('http://localhost:10000/api/auth/login', formData);
+      const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+      const response = await axios.post(`${backendUrl}/api/auth/login`, formData);
       
       const userWithToken = { ...response.data.user, token: response.data.token };
 

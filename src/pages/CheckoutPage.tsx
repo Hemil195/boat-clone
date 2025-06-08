@@ -63,7 +63,7 @@ const CheckoutPage = () => {
     ifscCode: '',
   });
 
-  const backendUrl = 'http://localhost:10000';
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000';
 
   useEffect(() => {
     if (user && user.token) {

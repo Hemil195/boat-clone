@@ -36,7 +36,7 @@ const UserProfilePage: React.FC = () => {
     postalCode: '',
   });
 
-  const backendUrl = 'http://localhost:10000'; // Changed to local backend URL for local development
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000'; // Changed to use environment variable
 
   useEffect(() => {
     if (user && user.token) {
