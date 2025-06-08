@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LogOut, User, Settings, ShoppingBag, Heart } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/context/AuthContext';
 
 interface UserMenuProps {
   isOpen: boolean;
@@ -10,12 +11,11 @@ interface UserMenuProps {
 
 const UserMenu = ({ isOpen, onClose }: UserMenuProps) => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const { user, logout } = useAuth();
   const isLoggedIn = !!user;
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logout();
     onClose();
     navigate('/');
   };
@@ -30,11 +30,11 @@ const UserMenu = ({ isOpen, onClose }: UserMenuProps) => {
           <div className="p-4 bg-gradient-to-r from-boat-red to-boat-red-dark">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-boat-red font-bold text-xl">
-                {user.name.charAt(0).toUpperCase()}
+                {user && user.name ? user.name.charAt(0).toUpperCase() : 'U'}
               </div>
               <div className="text-white">
-                <p className="font-semibold text-lg">{user.name}</p>
-                <p className="text-sm opacity-90">{user.email}</p>
+                <p className="font-semibold text-lg">{user?.name || 'User'}</p>
+                <p className="text-sm opacity-90">{user?.email || 'email@example.com'}</p>
               </div>
             </div>
           </div>

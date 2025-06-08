@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -31,9 +33,14 @@ const Login = () => {
     setError('');
     
     try {
-      const response = await axios.post('https://boat-clone-ttob.onrender.com/api/auth/login', formData);
+      const response = await axios.post('http://localhost:10000/api/auth/login', formData);
+      
+      const userWithToken = { ...response.data.user, token: response.data.token };
+
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('user', JSON.stringify(userWithToken));
+      
+      login(userWithToken);
       
       toast({
         title: "Login successful!",

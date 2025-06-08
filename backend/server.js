@@ -56,6 +56,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/user'));
+app.use('/api/orders', require('./routes/order'));
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {

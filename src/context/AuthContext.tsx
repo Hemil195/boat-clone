@@ -4,6 +4,12 @@ interface User {
   id: string;
   email: string;
   name: string;
+  token?: string;
+  address?: string;
+  phoneNumber?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
 }
 
 interface AuthContextType {
@@ -17,14 +23,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    const savedToken = localStorage.getItem('token');
+    if (savedUser && savedToken) {
+      const parsedUser = JSON.parse(savedUser);
+      return { ...parsedUser, token: savedToken };
+    }
+    return null;
   });
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('user', JSON.stringify({ id: user.id, name: user.name, email: user.email }));
+      if (user.token) {
+        localStorage.setItem('token', user.token);
+      }
     } else {
       localStorage.removeItem('user');
+      localStorage.removeItem('token');
     }
   }, [user]);
 

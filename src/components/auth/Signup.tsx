@@ -6,18 +6,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    address: '',
+    phoneNumber: '',
+    city: '',
+    state: '',
+    postalCode: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -32,9 +39,14 @@ const Signup = () => {
     setError('');
     
     try {
-      const response = await axios.post('https://boat-clone-ttob.onrender.com/api/auth/signup', formData);
+      const response = await axios.post('http://localhost:10000/api/auth/signup', formData);
+      
+      const userWithToken = { ...response.data.user, token: response.data.token };
+
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('user', JSON.stringify(userWithToken));
+      
+      login(userWithToken);
       
       toast({
         title: "Account created!",
@@ -74,6 +86,7 @@ const Signup = () => {
           )}
 
           <div className="space-y-4">
+            {/* Full Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <div className="relative">
@@ -91,6 +104,7 @@ const Signup = () => {
               </div>
             </div>
 
+            {/* Email Address */}
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
               <div className="relative">
@@ -108,6 +122,7 @@ const Signup = () => {
               </div>
             </div>
 
+            {/* Password */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
@@ -134,6 +149,71 @@ const Signup = () => {
                   )}
                 </button>
               </div>
+            </div>
+
+            {/* Phone Number */}
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number (Optional)</Label>
+              <Input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                placeholder="Enter your phone number"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Address */}
+            <div className="space-y-2">
+              <Label htmlFor="address">Address (Optional)</Label>
+              <Input
+                id="address"
+                name="address"
+                type="text"
+                placeholder="Enter your street address"
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* City & State */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City (Optional)</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  type="text"
+                  placeholder="Enter your city"
+                  value={formData.city}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State (Optional)</Label>
+                <Input
+                  id="state"
+                  name="state"
+                  type="text"
+                  placeholder="Enter your state"
+                  value={formData.state}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            {/* Postal Code */}
+            <div className="space-y-2">
+              <Label htmlFor="postalCode">Postal Code (Optional)</Label>
+              <Input
+                id="postalCode"
+                name="postalCode"
+                type="text"
+                placeholder="Enter your postal code"
+                value={formData.postalCode}
+                onChange={handleChange}
+              />
             </div>
           </div>
 

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Product } from '@/data/products';
+import axios from 'axios';
+import { useToast } from '@/hooks/use-toast';
 
 interface OrderItem {
   product: Product;
@@ -42,7 +44,8 @@ interface Order {
 
 interface OrderContextType {
   orders: Order[];
-  addOrder: (order: Omit<Order, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => void;
+  addOrder: (orderData: any) => Promise<void>;
+  getOrders: () => Promise<void>;
   getOrder: (orderId: string) => Order | undefined;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
 }
@@ -50,7 +53,9 @@ interface OrderContextType {
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
+  const { toast } = useToast();
+  const backendUrl = 'http://localhost:10000';
   const [orders, setOrders] = useState<Order[]>(() => {
     if (!user) return [];
     const savedOrders = localStorage.getItem(`orders_${user.id}`);
@@ -74,18 +79,56 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [orders, user]);
 
-  const addOrder = (orderData: Omit<Order, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) return;
+  const addOrder = async (orderData: any) => {
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/orders`,
+        orderData,
+        {
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+          },
+        }
+      );
 
-    const newOrder: Order = {
-      ...orderData,
-      id: `ORD${Date.now()}`,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      // Update the user context with the new totalOrders count
+      if (response.data.user) {
+        login({
+          ...user,
+          ...response.data.user,
+        });
+      }
 
-    setOrders(prevOrders => [...prevOrders, newOrder]);
+      setOrders(prevOrders => [response.data.order, ...prevOrders]);
+      toast({
+        title: "Order Placed Successfully",
+        description: "Your order has been placed and is being processed.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error Placing Order",
+        description: error.response?.data?.message || 'Failed to place order. Please try again.',
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const getOrders = async () => {
+    try {
+      const response = await axios.get(`${backendUrl}/api/orders`, {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+      setOrders(response.data);
+    } catch (error: any) {
+      toast({
+        title: "Error Fetching Orders",
+        description: error.response?.data?.message || 'Failed to fetch orders. Please try again.',
+        variant: "destructive",
+      });
+    }
   };
 
   const getOrder = (orderId: string) => {
@@ -107,6 +150,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       value={{
         orders,
         addOrder,
+        getOrders,
         getOrder,
         updateOrderStatus,
       }}

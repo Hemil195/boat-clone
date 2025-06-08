@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCheckout } from '@/context/CheckoutContext';
 import { useCart } from '@/context/CartContext';
@@ -7,17 +7,32 @@ import { useOrder } from '@/context/OrderContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, ArrowRight, CreditCard, IndianRupee, Package } from 'lucide-react';
+import axios from 'axios';
+
+interface UserProfile {
+  _id: string;
+  name: string;
+  email: string;
+  address: string;
+  phoneNumber: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  totalOrders: number;
+  token?: string;
+}
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { cart, getTotalPrice, clearCart } = useCart();
   const { addOrder } = useOrder();
+  const { toast: showToast } = useToast();
   const {
     checkoutState,
     setShippingAddress,
@@ -47,6 +62,39 @@ const CheckoutPage = () => {
     accountNumber: '',
     ifscCode: '',
   });
+
+  const backendUrl = 'http://localhost:10000';
+
+  useEffect(() => {
+    if (user && user.token) {
+      const fetchUserProfile = async () => {
+        try {
+          const response = await axios.get<UserProfile>(`${backendUrl}/api/users/profile`, {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
+          });
+          const profileData = response.data;
+          setFormData(prev => ({
+            ...prev,
+            fullName: profileData.name || '',
+            address: profileData.address || '',
+            city: profileData.city || '',
+            state: profileData.state || '',
+            postalCode: profileData.postalCode || '',
+            phone: profileData.phoneNumber || '',
+          }));
+        } catch (error: any) {
+          showToast({
+            title: "Error loading profile for checkout",
+            description: error.response?.data?.message || 'Could not pre-fill checkout details.',
+            variant: "destructive",
+          });
+        }
+      };
+      fetchUserProfile();
+    }
+  }, [user]);
 
   if (!user) {
     navigate('/login');
@@ -113,7 +161,11 @@ const CheckoutPage = () => {
         };
         break;
       default:
-        toast.error('Please select a valid payment method');
+        showToast({
+          title: "Payment Method Error",
+          description: 'Please select a valid payment method',
+          variant: "destructive",
+        });
         return;
     }
 
@@ -121,32 +173,53 @@ const CheckoutPage = () => {
     nextStep();
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!user) {
-      toast.error('Please login to place an order');
+      showToast({
+        title: "Authentication Required",
+        description: 'Please login to place an order',
+        variant: "destructive",
+      });
       navigate('/login');
       return;
     }
 
     if (!checkoutState.shippingAddress || !checkoutState.paymentMethod) {
-      toast.error('Please complete all checkout steps');
+      showToast({
+        title: "Checkout Incomplete",
+        description: 'Please complete all checkout steps',
+        variant: "destructive",
+      });
       return;
     }
 
     const orderData = {
       userId: user.id,
-      items: cart,
+      items: cart.map(cartItem => ({
+        productId: cartItem.product.id,
+        name: cartItem.product.name,
+        quantity: cartItem.quantity,
+        price: cartItem.product.price,
+      })),
       totalAmount: getTotalPrice(),
       shippingAddress: checkoutState.shippingAddress,
       paymentMethod: checkoutState.paymentMethod,
       orderNotes: checkoutState.orderNotes,
     };
 
-    addOrder(orderData);
-    toast.success('Order placed successfully!');
-    clearCart();
-    resetCheckout();
-    navigate('/orders');
+    try {
+      await addOrder(orderData);
+      showToast({
+        title: "Order Placed Successfully!",
+        description: 'Your order has been placed successfully.',
+      });
+      clearCart();
+      resetCheckout();
+      navigate('/orders');
+    } catch (error) {
+      // The addOrder function in OrderContext already handles toast for errors
+      console.error("Error placing order in CheckoutPage:", error);
+    }
   };
 
   const renderStepIndicator = () => {
@@ -224,8 +297,22 @@ const CheckoutPage = () => {
           onChange={handleInputChange}
           required
         />
+        <Input
+          name="country"
+          placeholder="Country"
+          value={formData.country}
+          onChange={handleInputChange}
+          required
+          disabled
+        />
       </div>
-      <Button type="submit" className="w-full">
+      <Textarea
+        name="orderNotes"
+        placeholder="Order Notes (optional)"
+        value={checkoutState.orderNotes}
+        onChange={handleInputChange}
+      />
+      <Button type="submit" className="w-full bg-boat-red hover:bg-boat-red-dark">
         Continue to Payment
       </Button>
     </form>
@@ -233,113 +320,119 @@ const CheckoutPage = () => {
 
   const renderPaymentStep = () => (
     <form onSubmit={handlePaymentSubmit} className="space-y-6">
-      <RadioGroup 
+      <h3 className="text-xl font-semibold mb-4">Select Payment Method</h3>
+      <RadioGroup
         value={formData.paymentType}
-        onValueChange={(value) => setFormData(prev => ({ ...prev, paymentType: value }))}
+        onValueChange={(value: string) => setFormData(prev => ({ ...prev, paymentType: value }))}
         className="space-y-4"
       >
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 border p-3 rounded-md">
           <RadioGroupItem value="card" id="card" />
-          <Label htmlFor="card">Credit/Debit Card</Label>
+          <Label htmlFor="card" className="flex items-center space-x-2 text-lg font-medium">
+            <CreditCard className="h-5 w-5" />
+            <span>Credit / Debit Card</span>
+          </Label>
         </div>
-        <div className="flex items-center space-x-2">
+        {formData.paymentType === 'card' && (
+          <Card className="ml-6">
+            <CardContent className="pt-4 space-y-3">
+              <Input
+                name="cardNumber"
+                placeholder="Card Number"
+                value={formData.cardNumber}
+                onChange={handleInputChange}
+                required
+              />
+              <Input
+                name="cardName"
+                placeholder="Name on Card"
+                value={formData.cardName}
+                onChange={handleInputChange}
+                required
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  name="expiryDate"
+                  placeholder="MM/YY"
+                  value={formData.expiryDate}
+                  onChange={handleInputChange}
+                  required
+                />
+                <Input
+                  name="cvv"
+                  placeholder="CVV"
+                  value={formData.cvv}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="flex items-center space-x-2 border p-3 rounded-md">
           <RadioGroupItem value="upi" id="upi" />
-          <Label htmlFor="upi">UPI</Label>
+          <Label htmlFor="upi" className="flex items-center space-x-2 text-lg font-medium">
+            <IndianRupee className="h-5 w-5" />
+            <span>UPI</span>
+          </Label>
         </div>
-        <div className="flex items-center space-x-2">
+        {formData.paymentType === 'upi' && (
+          <Card className="ml-6">
+            <CardContent className="pt-4 space-y-3">
+              <Input
+                name="upiId"
+                placeholder="Your UPI ID (e.g. example@bank)"
+                value={formData.upiId}
+                onChange={handleInputChange}
+                required
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="flex items-center space-x-2 border p-3 rounded-md">
           <RadioGroupItem value="netbanking" id="netbanking" />
-          <Label htmlFor="netbanking">Net Banking</Label>
+          <Label htmlFor="netbanking" className="flex items-center space-x-2 text-lg font-medium">
+            <Package className="h-5 w-5" />
+            <span>Net Banking</span>
+          </Label>
         </div>
+        {formData.paymentType === 'netbanking' && (
+          <Card className="ml-6">
+            <CardContent className="pt-4 space-y-3">
+              <Input
+                name="bankName"
+                placeholder="Bank Name"
+                value={formData.bankName}
+                onChange={handleInputChange}
+                required
+              />
+              <Input
+                name="accountNumber"
+                placeholder="Account Number"
+                value={formData.accountNumber}
+                onChange={handleInputChange}
+                required
+              />
+              <Input
+                name="ifscCode"
+                placeholder="IFSC Code"
+                value={formData.ifscCode}
+                onChange={handleInputChange}
+                required
+              />
+            </CardContent>
+          </Card>
+        )}
       </RadioGroup>
 
-      {formData.paymentType === 'card' && (
-        <div className="space-y-4">
-          <Input
-            name="cardNumber"
-            placeholder="Card Number"
-            value={formData.cardNumber}
-            onChange={handleInputChange}
-            required
-            maxLength={16}
-            pattern="[0-9]*"
-          />
-          <Input
-            name="cardName"
-            placeholder="Name on Card"
-            value={formData.cardName}
-            onChange={handleInputChange}
-            required
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              name="expiryDate"
-              placeholder="MM/YY"
-              value={formData.expiryDate}
-              onChange={handleInputChange}
-              required
-              maxLength={5}
-              pattern="(0[1-9]|1[0-2])\/([0-9]{2})"
-            />
-            <Input
-              name="cvv"
-              placeholder="CVV"
-              value={formData.cvv}
-              onChange={handleInputChange}
-              required
-              maxLength={3}
-              pattern="[0-9]*"
-            />
-          </div>
-        </div>
-      )}
-
-      {formData.paymentType === 'upi' && (
-        <div className="space-y-4">
-          <Input
-            name="upiId"
-            placeholder="UPI ID (e.g., name@bank)"
-            value={formData.upiId}
-            onChange={handleInputChange}
-            required
-            pattern="[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+"
-          />
-        </div>
-      )}
-
-      {formData.paymentType === 'netbanking' && (
-        <div className="space-y-4">
-          <Input
-            name="bankName"
-            placeholder="Bank Name"
-            value={formData.bankName}
-            onChange={handleInputChange}
-            required
-          />
-          <Input
-            name="accountNumber"
-            placeholder="Account Number"
-            value={formData.accountNumber}
-            onChange={handleInputChange}
-            required
-            pattern="[0-9]*"
-          />
-          <Input
-            name="ifscCode"
-            placeholder="IFSC Code"
-            value={formData.ifscCode}
-            onChange={handleInputChange}
-            required
-            pattern="^[A-Z]{4}0[A-Z0-9]{6}$"
-          />
-        </div>
-      )}
-
-      <div className="flex space-x-4">
-        <Button type="button" variant="outline" onClick={prevStep}>
-          Back
+      <div className="flex justify-between mt-6">
+        <Button type="button" onClick={prevStep} variant="outline">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Shipping
         </Button>
-        <Button type="submit" className="flex-1">
-          Continue to Review
+        <Button type="submit" className="bg-boat-red hover:bg-boat-red-dark">
+          Continue to Review <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </form>
@@ -347,6 +440,7 @@ const CheckoutPage = () => {
 
   const renderReviewStep = () => (
     <div className="space-y-6">
+      <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
       <Card>
         <CardHeader>
           <CardTitle>Shipping Address</CardTitle>
@@ -354,12 +448,9 @@ const CheckoutPage = () => {
         <CardContent>
           <p>{checkoutState.shippingAddress?.fullName}</p>
           <p>{checkoutState.shippingAddress?.address}</p>
-          <p>
-            {checkoutState.shippingAddress?.city}, {checkoutState.shippingAddress?.state}{' '}
-            {checkoutState.shippingAddress?.postalCode}
-          </p>
+          <p>{checkoutState.shippingAddress?.city}, {checkoutState.shippingAddress?.state} - {checkoutState.shippingAddress?.postalCode}</p>
           <p>{checkoutState.shippingAddress?.country}</p>
-          <p>{checkoutState.shippingAddress?.phone}</p>
+          <p>Phone: {checkoutState.shippingAddress?.phone}</p>
         </CardContent>
       </Card>
 
@@ -368,57 +459,53 @@ const CheckoutPage = () => {
           <CardTitle>Payment Method</CardTitle>
         </CardHeader>
         <CardContent>
+          <p>Type: {checkoutState.paymentMethod?.type}</p>
           {checkoutState.paymentMethod?.type === 'card' && (
-            <>
-              <p>Card ending in {checkoutState.paymentMethod.details.cardNumber?.slice(-4)}</p>
-              <p>{checkoutState.paymentMethod.details.cardName}</p>
-              <p>Expires: {checkoutState.paymentMethod.details.expiryDate}</p>
-            </>
+            <p>Card Number: **** **** **** {checkoutState.paymentMethod.details.cardNumber.slice(-4)}</p>
           )}
           {checkoutState.paymentMethod?.type === 'upi' && (
             <p>UPI ID: {checkoutState.paymentMethod.details.upiId}</p>
           )}
           {checkoutState.paymentMethod?.type === 'netbanking' && (
-            <>
-              <p>Bank: {checkoutState.paymentMethod.details.bankName}</p>
-              <p>Account ending in {checkoutState.paymentMethod.details.accountNumber?.slice(-4)}</p>
-              <p>IFSC: {checkoutState.paymentMethod.details.ifscCode}</p>
-            </>
+            <p>Bank: {checkoutState.paymentMethod.details.bankName}</p>
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Order Summary</CardTitle>
+          <CardTitle>Items in Cart</CardTitle>
         </CardHeader>
         <CardContent>
           {cart.map(item => (
-            <div key={item.product.id} className="flex justify-between py-2">
-              <span>{item.product.name}</span>
-              <span>₹{item.product.price * item.quantity}</span>
+            <div key={item.product.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+              <p>{item.product.name} x {item.quantity}</p>
+              <p>₹{(item.product.price * item.quantity).toFixed(2)}</p>
             </div>
           ))}
-          <div className="border-t pt-4 mt-4">
-            <div className="flex justify-between font-bold">
-              <span>Total</span>
-              <span>₹{getTotalPrice()}</span>
-            </div>
+          <div className="flex justify-between items-center font-bold mt-4">
+            <p>Total:</p>
+            <p>₹{getTotalPrice().toFixed(2)}</p>
           </div>
         </CardContent>
       </Card>
 
-      <Textarea
-        placeholder="Add order notes (optional)"
-        value={checkoutState.orderNotes}
-        onChange={e => setOrderNotes(e.target.value)}
-      />
+      {checkoutState.orderNotes && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Order Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>{checkoutState.orderNotes}</p>
+          </CardContent>
+        </Card>
+      )}
 
-      <div className="flex space-x-4">
-        <Button type="button" variant="outline" onClick={prevStep}>
-          Back
+      <div className="flex justify-between mt-6">
+        <Button type="button" onClick={prevStep} variant="outline">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Payment
         </Button>
-        <Button onClick={handlePlaceOrder} className="flex-1">
+        <Button onClick={handlePlaceOrder} className="bg-boat-red hover:bg-boat-red-dark">
           Place Order
         </Button>
       </div>
@@ -426,14 +513,19 @@ const CheckoutPage = () => {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-8">Checkout</h1>
+    <div className="container mx-auto px-4 py-24">
       {renderStepIndicator()}
-      <div className="max-w-2xl mx-auto">
-        {checkoutState.step === 1 && renderShippingStep()}
-        {checkoutState.step === 2 && renderPaymentStep()}
-        {checkoutState.step === 3 && renderReviewStep()}
-      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Checkout</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {checkoutState.step === 1 && renderShippingStep()}
+          {checkoutState.step === 2 && renderPaymentStep()}
+          {checkoutState.step === 3 && renderReviewStep()}
+        </CardContent>
+      </Card>
     </div>
   );
 };

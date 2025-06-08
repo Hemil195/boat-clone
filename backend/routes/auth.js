@@ -6,7 +6,7 @@ const User = require('../models/User');
 // Signup route
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, address, phoneNumber, city, state, postalCode } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -18,7 +18,12 @@ router.post('/signup', async (req, res) => {
     const user = new User({
       name,
       email,
-      password
+      password,
+      address,
+      phoneNumber,
+      city,
+      state,
+      postalCode
     });
 
     await user.save();
@@ -36,7 +41,12 @@ router.post('/signup', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        address: user.address,
+        phoneNumber: user.phoneNumber,
+        city: user.city,
+        state: user.state,
+        postalCode: user.postalCode
       }
     });
   } catch (error) {

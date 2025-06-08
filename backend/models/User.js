@@ -19,6 +19,30 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 6
   },
+  address: {
+    type: String,
+    default: '' // Optional: default to empty string
+  },
+  phoneNumber: {
+    type: String,
+    default: ''
+  },
+  city: {
+    type: String,
+    default: ''
+  },
+  state: {
+    type: String,
+    default: ''
+  },
+  postalCode: {
+    type: String,
+    default: ''
+  },
+  totalOrders: {
+    type: Number,
+    default: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now

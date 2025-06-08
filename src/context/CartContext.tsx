@@ -83,6 +83,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = () => {
     if (!user) return;
     setCart([]);
+    localStorage.removeItem(`cart_${user.id}`);
   };
 
   const getTotalItems = () => {

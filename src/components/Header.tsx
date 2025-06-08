@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import UserMenu from './auth/UserMenu';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext'; // Import useAuth
 
 // Define a type for our suggestions
 interface SearchSuggestion {
@@ -53,7 +54,7 @@ const Header = () => {
   const navigate = useNavigate(); // Initialize useNavigate
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userButtonRef = useRef<HTMLButtonElement>(null);
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const { user } = useAuth(); // Use useAuth to get user object
 
   // Get unique categories from products
   const uniqueCategories = Array.from(new Set(products.map(product => product.category)));
@@ -386,7 +387,7 @@ const Header = () => {
                     >
                       {user ? (
                         <div className="w-6 h-6 rounded-full bg-boat-red flex items-center justify-center text-white font-bold">
-                          {user.name.charAt(0).toUpperCase()}
+                          {user && user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </div>
                       ) : (
               <User className="h-5 w-5" />
