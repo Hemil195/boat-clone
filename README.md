@@ -1,9 +1,10 @@
 # BOAT Clone E-commerce Project
 
-A modern e-commerce platform built with React, TypeScript, and shadcn-ui, featuring a beautiful and responsive user interface.
+A full-stack e-commerce platform inspired by BOAT, built with React, TypeScript, and Node.js, featuring a modern and responsive user interface.
 
 ## 🚀 Features
 
+### Frontend
 - Modern and responsive UI using Tailwind CSS
 - Type-safe development with TypeScript
 - Component-based architecture using shadcn-ui
@@ -14,9 +15,20 @@ A modern e-commerce platform built with React, TypeScript, and shadcn-ui, featur
 - Routing with React Router DOM
 - State management with React Query
 
+### Backend
+- RESTful API architecture
+- MongoDB database integration
+- JWT authentication
+- Secure password hashing
+- Middleware for request validation
+- Error handling middleware
+- File upload support
+- API rate limiting
+
 ## 🛠️ Tech Stack
 
-- **Frontend Framework:** React 18
+### Frontend
+- **Framework:** React 18
 - **Language:** TypeScript
 - **Build Tool:** Vite
 - **Styling:** Tailwind CSS
@@ -29,6 +41,16 @@ A modern e-commerce platform built with React, TypeScript, and shadcn-ui, featur
 - **Charts:** Recharts
 - **Notifications:** Sonner
 
+### Backend
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** MongoDB
+- **Authentication:** JWT
+- **Validation:** Express Validator
+- **File Upload:** Multer
+- **Security:** bcrypt, helmet
+- **Logging:** Morgan
+
 ## 📦 Installation
 
 1. Clone the repository:
@@ -37,66 +59,80 @@ git clone <repository-url>
 cd boat-clone
 ```
 
-2. Install dependencies:
+2. Install frontend dependencies:
 ```bash
 npm install
 ```
 
-3. Start the development server:
+3. Install backend dependencies:
+```bash
+cd backend
+npm install
+```
+
+4. Set up environment variables:
+   - Create `.env` file in the root directory
+   - Create `.env` file in the backend directory
+
+5. Start the development servers:
+
+Frontend:
 ```bash
 npm run dev
 ```
 
-4. Build for production:
+Backend:
 ```bash
-npm run build
+cd backend
+npm run dev
 ```
 
 ## 🏗️ Project Structure
 
 ```
-src/
-├── components/     # Reusable UI components
-├── pages/         # Page components
-├── data/          # Static data and constants
-├── lib/           # Utility functions and configurations
-├── hooks/         # Custom React hooks
-└── App.tsx        # Main application component
+├── src/                    # Frontend source code
+│   ├── components/        # Reusable UI components
+│   ├── pages/            # Page components
+│   ├── data/             # Static data and constants
+│   ├── lib/              # Utility functions and configurations
+│   └── hooks/            # Custom React hooks
+│
+├── backend/              # Backend source code
+│   ├── models/          # Database models
+│   ├── routes/          # API routes
+│   ├── middleware/      # Custom middleware
+│   └── server.js        # Main server file
+│
+├── public/              # Static assets
+└── dist/               # Production build
 ```
 
 ## 🚀 Available Scripts
 
+### Frontend
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run build:dev` - Build for development
 - `npm run lint` - Run ESLint
 - `npm run preview` - Preview production build
 
-## 🎨 UI Components
-
-The project uses shadcn-ui components including:
-- Accordion
-- Alert Dialog
-- Avatar
-- Button
-- Card
-- Dialog
-- Dropdown Menu
-- Form
-- Input
-- Navigation Menu
-- Select
-- Tabs
-- Toast
-- And many more...
+### Backend
+- `npm run dev` - Start development server
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
 
 ## 🔧 Configuration
 
-The project uses several configuration files:
+### Frontend
 - `vite.config.ts` - Vite configuration
 - `tailwind.config.ts` - Tailwind CSS configuration
 - `tsconfig.json` - TypeScript configuration
 - `eslint.config.js` - ESLint configuration
+
+### Backend
+- `server.js` - Main server configuration
+- `.env` - Environment variables
+- `package.json` - Dependencies and scripts
 
 ## 📝 License
 
@@ -111,4 +147,3 @@ Contributions, issues, and feature requests are welcome!
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-# boat-clone
