@@ -63,7 +63,7 @@ const CheckoutPage = () => {
     ifscCode: '',
   });
 
-  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+  const backendUrl = 'https://boat-clone-ttob.onrender.com';
 
   useEffect(() => {
     if (user && user.token) {

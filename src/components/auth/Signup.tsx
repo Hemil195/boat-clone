@@ -39,7 +39,7 @@ const Signup = () => {
     setError('');
     
     try {
-      const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+      const backendUrl = 'https://boat-clone-ttob.onrender.com';
       const response = await axios.post(`${backendUrl}/api/auth/signup`, formData);
       
       const userWithToken = { ...response.data.user, token: response.data.token };

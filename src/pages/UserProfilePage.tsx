@@ -36,7 +36,7 @@ const UserProfilePage: React.FC = () => {
     postalCode: '',
   });
 
-  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000'; // Changed to use environment variable
+  const backendUrl = 'https://boat-clone-ttob.onrender.com'; // Changed to directly use the deployed backend URL
 
   useEffect(() => {
     if (user && user.token) {

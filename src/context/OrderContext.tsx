@@ -55,7 +55,7 @@ const OrderContext = createContext<OrderContextType | undefined>(undefined);
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, login } = useAuth();
   const { toast } = useToast();
-  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+  const backendUrl = 'https://boat-clone-ttob.onrender.com';
   const [orders, setOrders] = useState<Order[]>(() => {
     if (!user) return [];
     const savedOrders = localStorage.getItem(`orders_${user.id}`);
