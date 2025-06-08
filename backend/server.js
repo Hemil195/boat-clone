@@ -2,52 +2,33 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
-const fs = require('fs');
 
-// Debug: Check if .env file exists and read its contents
-const envPath = path.join(__dirname, '.env');
-console.log('Looking for .env file at:', envPath);
-console.log('.env file exists:', fs.existsSync(envPath));
+// Load environment variables conditionally
+if (process.env.NODE_ENV !== 'production') {
+  const result = dotenv.config();
 
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, 'utf8');
-  console.log('Content of .env file:');
-  console.log(envContent.split('\n').map(line => {
-    if (line.includes('MONGODB_URI')) {
-      return 'MONGODB_URI=***hidden***';
-    }
-    if (line.includes('JWT_SECRET')) {
-      return 'JWT_SECRET=***hidden***';
-    }
-    return line;
-  }).join('\n'));
-}
-
-// Load environment variables
-const result = dotenv.config();
-
-if (result.error) {
-  console.error('Error loading .env file:', result.error);
-  process.exit(1);
+  if (result.error) {
+    console.error('Error loading .env file:', result.error);
+    process.exit(1);
+  }
 }
 
 // Debug: Log environment variables (without sensitive data)
 console.log('Environment variables loaded:');
 console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
 console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-console.log('PORT:', process.env.PORT || 5000);
+console.log('PORT:', process.env.PORT || 10000);
 
 // Check if required environment variables are set
 if (!process.env.MONGODB_URI) {
   console.error('Error: MONGODB_URI is not defined in environment variables');
-  console.error('Please make sure you have created a .env file with MONGODB_URI');
+  console.error('Please make sure you have created a .env file with MONGODB_URI or set it in your deployment environment');
   process.exit(1);
 }
 
 if (!process.env.JWT_SECRET) {
   console.error('Error: JWT_SECRET is not defined in environment variables');
-  console.error('Please make sure you have created a .env file with JWT_SECRET');
+  console.error('Please make sure you have created a .env file with JWT_SECRET or set it in your deployment environment');
   process.exit(1);
 }
 
